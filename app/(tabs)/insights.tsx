@@ -7,7 +7,7 @@ const SafeAreaView = styled(RNSafeaAreaView)
 const Insight = () => {
   return (
     <SafeAreaView className="flex-1 p-5 bg-background">
-      <Text>insight</Text>
+      <Text>insights</Text>
     </SafeAreaView>
   )
 }
