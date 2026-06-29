@@ -1,5 +1,5 @@
 import "@/global.css";
-import { ClerkProvider } from "@clerk/expo";
+import { ClerkProvider, useAuth } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
@@ -25,17 +25,25 @@ export default function RootLayout() {
     "sans-semibold": require("../assets/fonts/PlusJakartaSans-SemiBold.ttf"),
   });
 
-  useEffect(() => {
-    if (fontsLoaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded]);
-
   if (!fontsLoaded) return null;
 
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <Stack screenOptions={{ headerShown: false }} />
+      <RootNavigator />
     </ClerkProvider>
   );
+}
+
+function RootNavigator() {
+  const { isLoaded } = useAuth();
+
+  useEffect(() => {
+    if (isLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [isLoaded]);
+
+  if (!isLoaded) return null;
+
+  return <Stack screenOptions={{ headerShown: false }} />;
 }

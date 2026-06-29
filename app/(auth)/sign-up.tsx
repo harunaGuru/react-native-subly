@@ -20,6 +20,11 @@ const SafeAreaView = styled(RNSafeAreaView);
 
 const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 const MIN_PASSWORD = 8;
+const logAuthIssue = (message: string) => {
+  if (__DEV__) {
+    console.warn(message);
+  }
+};
 
 /* ──────────────────────────── screen ──────────────────────────── */
 
@@ -67,7 +72,9 @@ export default function SignUpScreen() {
       });
 
       if (error) {
-        setApiError(error.longMessage || error.message || "Unable to create account");
+        setApiError(
+          error.longMessage || error.message || "Unable to create account",
+        );
         return;
       }
 
@@ -82,12 +89,37 @@ export default function SignUpScreen() {
         );
       }
     } catch (err: any) {
-      console.error("Sign-up error:", err, err.errors);
-      setApiError(err.errors?.[0]?.longMessage || err.message || "An error occurred");
+      logAuthIssue("Sign-up request failed.");
+      setApiError(
+        err.errors?.[0]?.longMessage || err.message || "An error occurred",
+      );
     }
   }, [canSubmit, email, password, signUp]);
 
   /* ── verify email code ── */
+  const handleResendCode = useCallback(async () => {
+    setApiError("");
+
+    try {
+      const { error } = await signUp.verifications.sendEmailCode();
+
+      if (error) {
+        setApiError(
+          error.longMessage ||
+            error.message ||
+            "Unable to resend verification code",
+        );
+      }
+    } catch (err: any) {
+      logAuthIssue("Sign-up verification resend failed.");
+      setApiError(
+        err.errors?.[0]?.longMessage ||
+          err.message ||
+          "Unable to resend verification code",
+      );
+    }
+  }, [signUp]);
+
   const handleVerify = useCallback(async () => {
     setApiError("");
     try {
@@ -106,12 +138,14 @@ export default function SignUpScreen() {
           },
         });
       } else {
-        console.error("Sign-up attempt not complete:", signUp);
+        logAuthIssue("Sign-up attempt did not complete.");
         setApiError("Sign-up not complete");
       }
     } catch (err: any) {
-      console.error("Verification error:", err, err.errors);
-      setApiError(err.errors?.[0]?.longMessage || err.message || "Invalid code");
+      logAuthIssue("Sign-up verification failed.");
+      setApiError(
+        err.errors?.[0]?.longMessage || err.message || "Invalid code",
+      );
     }
   }, [code, signUp, router]);
 
@@ -194,7 +228,7 @@ export default function SignUpScreen() {
 
                 <Pressable
                   className="auth-secondary-button"
-                  onPress={() => signUp.verifications.sendEmailCode()}
+                  onPress={handleResendCode}
                 >
                   <Text className="auth-secondary-button-text">
                     Resend code

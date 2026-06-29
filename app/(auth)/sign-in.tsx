@@ -19,6 +19,11 @@ const SafeAreaView = styled(RNSafeAreaView);
 /* ──────────────────────────── helpers ──────────────────────────── */
 
 const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+const logAuthIssue = (message: string) => {
+  if (__DEV__) {
+    console.warn(message);
+  }
+};
 
 /* ──────────────────────────── screen ──────────────────────────── */
 
@@ -94,15 +99,40 @@ export default function SignInScreen() {
           );
         }
       } else {
-        console.error("Sign-in attempt not complete:", signIn);
+        logAuthIssue("Sign-in attempt did not complete.");
       }
     } catch (err: any) {
-      console.error(JSON.stringify(err, null, 2));
-      setApiError(err.errors?.[0]?.longMessage || err.message || "An error occurred");
+      logAuthIssue("Sign-in request failed.");
+      setApiError(
+        err.errors?.[0]?.longMessage || err.message || "An error occurred",
+      );
     }
   }, [canSubmit, email, password, signIn, router]);
 
   /* ── verify MFA ── */
+  const handleResendCode = useCallback(async () => {
+    setApiError("");
+
+    try {
+      const { error } = await signIn.mfa.sendEmailCode();
+
+      if (error) {
+        setApiError(
+          error.longMessage ||
+            error.message ||
+            "Unable to resend verification code",
+        );
+      }
+    } catch (err: any) {
+      logAuthIssue("Sign-in MFA resend failed.");
+      setApiError(
+        err.errors?.[0]?.longMessage ||
+          err.message ||
+          "Unable to resend verification code",
+      );
+    }
+  }, [signIn]);
+
   const handleVerify = useCallback(async () => {
     setApiError("");
     try {
@@ -122,8 +152,10 @@ export default function SignInScreen() {
         });
       }
     } catch (err: any) {
-      console.error(JSON.stringify(err, null, 2));
-      setApiError(err.errors?.[0]?.longMessage || err.message || "Invalid code");
+      logAuthIssue("Sign-in MFA verification failed.");
+      setApiError(
+        err.errors?.[0]?.longMessage || err.message || "Invalid code",
+      );
     }
   }, [code, signIn, router]);
 
@@ -199,7 +231,7 @@ export default function SignInScreen() {
 
                 <Pressable
                   className="auth-secondary-button"
-                  onPress={() => signIn.mfa.sendEmailCode()}
+                  onPress={handleResendCode}
                 >
                   <Text className="auth-secondary-button-text">
                     Resend code

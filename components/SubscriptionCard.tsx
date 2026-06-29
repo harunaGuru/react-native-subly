@@ -25,13 +25,13 @@ const SubscriptionCard = ({ name, renewalDate, category, price, icon, currency, 
             <View className='sub-row'>
               <View className='sub-row-copy'>
                 <Text className='sub-label'>Payment:</Text>
-                <Text ellipsizeMode='tail' className='sub-value' numberOfLines={1}>{paymentMethod?.trim() ?? "Not Provided"}</Text>
+                <Text ellipsizeMode='tail' className='sub-value' numberOfLines={1}>{paymentMethod?.trim() || "Not Provided"}</Text>
               </View>
             </View>
             <View className='sub-row'>
               <View className='sub-row-copy'>
                 <Text className='sub-label'>Category:</Text>
-                <Text ellipsizeMode='tail' className='sub-value' numberOfLines={1}>{(category?.trim() || plan?.trim()) ?? "Not Provided"}</Text>
+                <Text ellipsizeMode='tail' className='sub-value' numberOfLines={1}>{(category?.trim() || plan?.trim()) || "Not Provided"}</Text>
               </View>
             </View>
             <View className='sub-row'>
