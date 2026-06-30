@@ -2,6 +2,7 @@ import { useSignIn } from "@clerk/expo";
 import { type Href, Link, useRouter } from "expo-router";
 import { styled } from "nativewind";
 import React, { useCallback, useState } from "react";
+import { usePostHog } from "posthog-react-native";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -30,6 +31,7 @@ const logAuthIssue = (message: string) => {
 export default function SignInScreen() {
   const { signIn, errors, fetchStatus } = useSignIn();
   const router = useRouter();
+  const posthog = usePostHog();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -70,6 +72,11 @@ export default function SignInScreen() {
       }
 
       if (signIn.status === "complete") {
+        posthog.identify(email, {
+          $set: { email },
+          $set_once: { first_seen: new Date().toISOString() },
+        });
+        posthog.capture("user_signed_in", { method: "email" });
         await signIn.finalize({
           navigate: ({ session, decorateUrl }) => {
             if (session?.currentTask) return;
@@ -107,7 +114,7 @@ export default function SignInScreen() {
         err.errors?.[0]?.longMessage || err.message || "An error occurred",
       );
     }
-  }, [canSubmit, email, password, signIn, router]);
+  }, [canSubmit, email, password, signIn, router, posthog]);
 
   /* ── verify MFA ── */
   const handleResendCode = useCallback(async () => {

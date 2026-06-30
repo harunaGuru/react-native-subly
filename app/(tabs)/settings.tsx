@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { styled } from "nativewind";
 import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView as RNSafeaAreaView } from "react-native-safe-area-context";
+import { usePostHog } from "posthog-react-native";
 
 const SafeAreaView = styled(RNSafeaAreaView);
 
@@ -21,7 +22,7 @@ const DetailRow = ({ label, value }: { label: string; value: string }) => (
     <Text className="flex-1 text-sm font-sans-semibold text-muted-foreground">
       {label}
     </Text>
-    <Text className="max-w-[210px] text-right text-sm font-sans-bold text-primary">
+    <Text className="max-w-52.5 text-right text-sm font-sans-bold text-primary">
       {value}
     </Text>
   </View>
@@ -31,6 +32,7 @@ const Setting = () => {
   const { signOut } = useClerk();
   const { user } = useUser();
   const router = useRouter();
+  const posthog = usePostHog();
 
   const displayName = user?.fullName || user?.username || "Subly user";
   const email = user?.primaryEmailAddress?.emailAddress || "No email address";
@@ -43,6 +45,8 @@ const Setting = () => {
     .toUpperCase();
 
   const handleLogout = async () => {
+    posthog.capture("user_signed_out");
+    posthog.reset();
     await signOut();
     router.replace("/(auth)/sign-in");
   };

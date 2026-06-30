@@ -2,6 +2,7 @@ import { useAuth, useSignUp } from "@clerk/expo";
 import { type Href, Link, useRouter } from "expo-router";
 import { styled } from "nativewind";
 import React, { useCallback, useState } from "react";
+import { usePostHog } from "posthog-react-native";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -32,6 +33,7 @@ export default function SignUpScreen() {
   const { signUp, errors, fetchStatus } = useSignUp();
   const { isSignedIn } = useAuth();
   const router = useRouter();
+  const posthog = usePostHog();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -131,6 +133,11 @@ export default function SignUpScreen() {
       }
 
       if (signUp.status === "complete") {
+        posthog.identify(email, {
+          $set: { email },
+          $set_once: { first_seen: new Date().toISOString() },
+        });
+        posthog.capture("user_signed_up", { method: "email" });
         await signUp.finalize({
           navigate: ({ session, decorateUrl }) => {
             if (session?.currentTask) return;
@@ -147,7 +154,7 @@ export default function SignUpScreen() {
         err.errors?.[0]?.longMessage || err.message || "Invalid code",
       );
     }
-  }, [code, signUp, router]);
+  }, [code, signUp, router, email, posthog]);
 
   /* ── already signed in ── */
   if (signUp.status === "complete" || isSignedIn) {
