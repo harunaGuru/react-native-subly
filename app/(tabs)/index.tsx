@@ -3,15 +3,17 @@ import SubscriptionCard from "@/components/SubscriptionCard";
 import UpcomingSubscription from "@/components/UpcomingSubscription";
 import {
   HOME_BALANCE,
-  HOME_SUBSCRIPTIONS,
   UPCOMING_SUBSCRIPTIONS,
 } from "@/constants/data";
 import { icons } from "@/constants/icons";
 import images from "@/constants/images";
+import { useSubscriptions } from "@/contexts/SubscriptionsContext";
 import "@/global.css";
 import { formatCurrency } from "@/lib/utils";
-import {  useUser } from "@clerk/expo";
+import CreateSubscriptionModal from "@/src/components/CreateSubscriptionModal";
+import { useUser } from "@clerk/expo";
 import dayjs from "dayjs";
+import { useRouter } from "expo-router";
 import { styled } from "nativewind";
 import React, { useState } from "react";
 import { FlatList, Image, Pressable, Text, View } from "react-native";
@@ -23,6 +25,9 @@ const SafeAreaView = styled(RNSafeAreaView);
 export default function App() {
   const { user } = useUser();
   const posthog = usePostHog();
+  const router = useRouter();
+  const { subscriptions, addSubscription } = useSubscriptions();
+  const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<
     string | null
   >(null);
@@ -49,7 +54,12 @@ export default function App() {
                 />
                 <Text className="home-user-name">{displayName}</Text>
               </View>
-                <Pressable onPress={() => posthog.capture("add_subscription_tapped")}>
+                <Pressable
+                  onPress={() => {
+                    posthog.capture("add_subscription_tapped");
+                    setIsCreateModalVisible(true);
+                  }}
+                >
                   <Image source={icons.add} className="home-add-icon" />
                 </Pressable>
             </View>
@@ -79,10 +89,13 @@ export default function App() {
                 }
               />
             </View>
-            <ListHeading title="All Subscriptions" />
+            <ListHeading
+              title="All Subscriptions"
+              onActionPress={() => router.push("/subscriptions")}
+            />
           </>
         )}
-        data={HOME_SUBSCRIPTIONS}
+        data={subscriptions}
         renderItem={({ item }) => (
           <SubscriptionCard
             {...item}
@@ -102,7 +115,7 @@ export default function App() {
             }}
           />
         )}
-        extraData={expandedSubscriptionId}
+        extraData={[expandedSubscriptionId, subscriptions]}
         ItemSeparatorComponent={() => <View className="h-4" />}
         showsVerticalScrollIndicator={false}
         keyExtractor={(item) => item.id}
@@ -110,6 +123,11 @@ export default function App() {
           <Text className="home-empty-state">No subscriptions yet.</Text>
         }
         contentContainerClassName="pb-20"
+      />
+      <CreateSubscriptionModal
+        visible={isCreateModalVisible}
+        onClose={() => setIsCreateModalVisible(false)}
+        onSubmit={addSubscription}
       />
     </SafeAreaView>
   );
